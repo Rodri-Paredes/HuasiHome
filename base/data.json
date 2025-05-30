@@ -1,0 +1,24 @@
+{
+  "title": "Casa en el centro",
+  "description": "Amplia casa con jardín y garaje.",
+  "price": 120000,
+  "location": {
+    "address": "Calle Bolívar #123",
+    "city": "La Paz",
+    "latitude": -16.5,
+    "longitude": -68.15
+  },
+  "features": {
+    "bedrooms": 3,
+    "bathrooms": 2,
+    "garage": true,
+    "area": 180
+  },
+  "images": [
+    "https://firebasestorage.googleapis.com/propiedades/casa1.jpg",
+    "https://firebasestorage.googleapis.com/propiedades/casa2.jpg"
+  ],
+  "agentId": "u123456789",
+  "createdAt": "2025-05-21T12:00:00Z",
+  "status": "publicada"
+}
