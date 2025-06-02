@@ -1,20 +1,36 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useProperties } from '../hooks/useProperties';
 import { User, LogOut, Heart, Home } from 'lucide-react';
 import PropertyCard from '../components/PropertyCard';
+import { getDatabase, ref, get } from 'firebase/database';
 
 const ProfilePage = () => {
   const { user, logout } = useAuth();
-  const { properties, loading } = useProperties();
+  const { properties, loading, favoritedProperties} = useProperties();
   const [activeTab, setActiveTab] = useState<'profile' | 'myProperties'>('profile');
-  
+  const [userDisplayName, setUserDisplayName] = useState('');
+
   // Get user's properties
-  const userProperties = properties.filter(property => property.ownerId === user?.uid);
+  const userProperties = properties.filter(property => property.ownerId === user?.id);
 
   const handleLogout = async () => {
     await logout();
   };
+
+  useEffect(() => {
+    const fetchDisplayName = async () => {
+      if (!user?.id) return;
+      const db = getDatabase();
+      const userRef = ref(db, `users/${user.id}`);
+      const snapshot = await get(userRef);
+      if (snapshot.exists()) {
+        const data = snapshot.val();
+        setUserDisplayName(data.displayName || '');
+      }
+    };
+    fetchDisplayName();
+  }, [user?.id]);
 
   if (!user) return null;
 
@@ -33,7 +49,7 @@ const ProfilePage = () => {
                     <User className="h-12 w-12 text-white" />
                   </div>
                 </div>
-                <h2 className="text-lg font-semibold">{user.displayName}</h2>
+                <h2 className="text-lg font-semibold">{userDisplayName}</h2>
                 <p className="text-secondary-500">{user.email}</p>
               </div>
               
@@ -94,7 +110,7 @@ const ProfilePage = () => {
                       type="text"
                       id="displayName"
                       name="displayName"
-                      value={user.displayName || ''}
+                      value={userDisplayName || ''}
                       readOnly
                       className="input bg-secondary-50"
                     />
@@ -137,7 +153,7 @@ const ProfilePage = () => {
                           </div>
                           <div className="ml-4">
                             <p className="text-sm text-secondary-500">Favoritos guardados</p>
-                            <p className="text-xl font-semibold">{user.favorites?.length || 0}</p>
+                            <p className="text-xl font-semibold">{favoritedProperties?.length || 0}</p>
                           </div>
                         </div>
                       </div>

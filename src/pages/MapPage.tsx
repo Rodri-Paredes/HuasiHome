@@ -6,7 +6,7 @@ import PropertyCard from '../components/PropertyCard';
 import { X, MapPin, List } from 'lucide-react';
 
 const MapPage = () => {
-  const { properties, loading, selectedProperty, setSelectedProperty } = useProperties();
+  const { filteredProperties, loading, selectedProperty, setSelectedProperty } = useProperties();
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   
 
@@ -48,7 +48,7 @@ const MapPage = () => {
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
 
         <div 
-          className={`${
+          className={`$${
             viewMode === 'map' ? 'flex' : 'hidden'
           } md:flex flex-1 relative ${selectedProperty ? 'md:w-2/3' : 'md:w-full'} transition-all duration-300`}
         >
@@ -57,22 +57,22 @@ const MapPage = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
             </div>
           ) : (
-            <MapComponent properties={properties} />
+            <MapComponent properties={filteredProperties} />
           )}
         </div>
 
         {viewMode === 'list' && (
           <div className="flex-1 md:hidden bg-secondary-50 overflow-y-auto">
             <div className="container mx-auto p-4">
-              <h2 className="text-xl font-bold mb-4">Propiedades ({properties.length})</h2>
+              <h2 className="text-xl font-bold mb-4">Propiedades ({filteredProperties.length})</h2>
               
               {loading ? (
                 <div className="flex justify-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
                 </div>
-              ) : properties.length > 0 ? (
+              ) : filteredProperties.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {properties.map(property => (
+                  {filteredProperties.map(property => (
                     <PropertyCard key={property.id} property={property} />
                   ))}
                 </div>

@@ -72,7 +72,7 @@ const MapComponent = ({ properties }: MapComponentProps) => {
 
         {properties.map(property => (
           <Marker
-            key={property.id}
+            key={property.id + '-' + property.location.lat + '-' + property.location.lng}
             position={property.location as LatLngExpression}
             icon={getMarkerIcon(getColor(property))}
           >

@@ -54,6 +54,7 @@ interface PropertyContextType {
   setSelectedProperty: (property: Property | null) => void;
   toggleFavorite: (propertyId: string) => Promise<void>;
   isFavorite: (propertyId: string) => boolean;
+  filteredProperties: Property[]; // <-- Agregado
 }
 
 export const PropertyContext = createContext<PropertyContextType | null>(null);
@@ -263,6 +264,16 @@ const isFavorite = (propertyId: string): boolean => {
 // Propiedades favoritas del usuario (objetos completos)
 const favoritedProperties = properties.filter(p => favorites.includes(p.id));
 
+// Filtro global de propiedades según filters
+const filteredProperties = properties.filter((property) => {
+  if (filters.transactionType && property.transactionType !== filters.transactionType) return false;
+  if (filters.propertyType && property.propertyType !== filters.propertyType) return false;
+  if (filters.city && property.city !== filters.city) return false;
+  if (filters.minPrice && property.price < filters.minPrice) return false;
+  if (filters.maxPrice && property.price > filters.maxPrice) return false;
+  return true;
+});
+
   const value = {
     properties,
     loading,
@@ -270,7 +281,8 @@ const favoritedProperties = properties.filter(p => favorites.includes(p.id));
     filters,
     selectedProperty,
     favorites,
-    favoritedProperties, // <-- Agregado aquí
+    favoritedProperties,
+    filteredProperties, // <-- Agregado aquí
     addProperty,
     updateProperty,
     deleteProperty,

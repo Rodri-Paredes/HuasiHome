@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Eye, EyeOff, MapPin, UserPlus } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
+import { getDatabase, ref, set } from 'firebase/database';
 
 const RegisterPage = () => {
   const { register, error, clearError } = useAuth();
@@ -31,10 +32,22 @@ const RegisterPage = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    
     setLoading(true);
     try {
-      await register(email, password, displayName);
+      // Creamos el usuario y obtenemos el objeto de usuario de Firebase
+      const userCredential = await import('firebase/auth').then(({ createUserWithEmailAndPassword, getAuth }) =>
+        createUserWithEmailAndPassword(getAuth(), email, password)
+      );
+      const userId = userCredential.user.uid;
+      const userEmail = userCredential.user.email;
+      // Guardamos en la colección users
+      const db = getDatabase();
+      await set(ref(db, `users/${userId}`), {
+        displayName,
+        email: userEmail,
+        favorites: [],
+      });
+      // No llamar a register aquí para evitar EMAIL_EXISTS
     } finally {
       setLoading(false);
     }
