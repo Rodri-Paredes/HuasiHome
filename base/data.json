@@ -1,24 +1,37 @@
 {
-  "title": "Casa en el centro",
-  "description": "Amplia casa con jardín y garaje.",
-  "price": 120000,
-  "location": {
-    "address": "Calle Bolívar #123",
-    "city": "La Paz",
-    "latitude": -16.5,
-    "longitude": -68.15
+  "properties": {
+    "propertyId123": {
+      "title": "Casa amplia en el centro",
+      "description": "Casa de 3 plantas con jardín",
+      "address": "Calle Falsa 123",
+      "city": "La Paz",
+      "price": 150000,
+      "currency": "USD",
+      "transactionType": "venta",
+      "propertyType": "casa",
+      "landSize": 300,
+      "constructionSize": 250,
+      "bedrooms": 4,
+      "bathrooms": 3,
+      "parkingSpots": 2,
+      "features": ["jardín", "terraza", "amoblado"],
+      "images": [
+        "https://firebasestorage.googleapis.com/.../img1.jpg"
+      ],
+      "location": {
+        "lat": -16.5000,
+        "lng": -68.1500
+      },
+      "ownerId": "user123",
+      "createdAt": "2025-06-01T20:00:00.000Z",
+      "updatedAt": "2025-06-01T20:00:00.000Z"
+    }
   },
-  "features": {
-    "bedrooms": 3,
-    "bathrooms": 2,
-    "garage": true,
-    "area": 180
-  },
-  "images": [
-    "https://firebasestorage.googleapis.com/propiedades/casa1.jpg",
-    "https://firebasestorage.googleapis.com/propiedades/casa2.jpg"
-  ],
-  "agentId": "u123456789",
-  "createdAt": "2025-05-21T12:00:00Z",
-  "status": "publicada"
+  "users": {
+    "user123": {
+      "name": "Rodrigo",
+      "email": "rodrigo@example.com",
+      "favorites": ["propertyId123"]
+    }
+  }
 }

@@ -1,5 +1,8 @@
 import { createContext, useState, useEffect, ReactNode } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { getDatabase, ref, onValue, get, set } from 'firebase/database';
+import  uploadPropertyToFirebase  from '../utils/firebaseHelpers';
+import app from '../firebase/config';
 
 export type TransactionType = 'venta' | 'anticrético' | 'alquiler';
 
@@ -62,73 +65,112 @@ interface PropertyProviderProps {
 export const PropertyProvider = ({ children }: PropertyProviderProps) => {
   const { user } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
-  const [favoritedProperties, setFavoritedProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filters, setFilters] = useState<PropertyFilter>({});
-  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null);
+  const [selectedProperty, setSelectedProperty] = useState<Property | null>(null)
+  const [favorites, setFavorites] = useState<string[]>([]);
 
-  // Load properties from localStorage on mount
-  useEffect(() => {
-    const storedProperties = localStorage.getItem('properties');
-    if (storedProperties) {
-      setProperties(JSON.parse(storedProperties));
+ useEffect(() => {
+  setLoading(true);
+
+  const db = getDatabase(app);
+  const propertiesRef = ref(db, 'properties'); // 'properties' es el nodo raíz en la BD
+
+  const unsubscribe = onValue(propertiesRef, (snapshot) => {
+    const data = snapshot.val();
+    if (data) {
+      // Convertimos el objeto de propiedades en array
+      const propertiesArray: Property[] = Object.values(data);
+      setProperties(propertiesArray);
+    } else {
+      setProperties([]);
     }
     setLoading(false);
-  }, []);
+  }, (error) => {
+    console.error('Error leyendo propiedades:', error);
+    setError('Error al cargar propiedades');
+    setLoading(false);
+  });
 
-  // Update favorited properties when user or properties change
-  useEffect(() => {
-    if (user && properties.length > 0) {
-      const favorites = properties.filter(property => 
-        user.favorites?.includes(property.id)
-      );
-      setFavoritedProperties(favorites);
-    } else {
-      setFavoritedProperties([]);
-    }
-  }, [user, properties]);
+  return () => {
+    // Desuscribimos el listener para evitar fugas de memoria
+    unsubscribe();
+  };
+}, []);
 
-  const addProperty = async (
-    propertyData: Omit<Property, 'id' | 'images' | 'createdAt' | 'updatedAt' | 'ownerId'>,
-    images: File[]
-  ): Promise<string> => {
+
+useEffect(() => {
+  const fetchFavorites = async () => {
+    if (!user) return;
+
     try {
-      if (!user) throw new Error('Debes iniciar sesión para publicar una propiedad');
+      const db = getDatabase(app);
+      const userFavoritesRef = ref(db, `users/${user.id}/favorites`);
+      const snapshot = await get(userFavoritesRef);
 
-      setLoading(true);
-
-      // Convert images to data URLs
-      const imageUrls = await Promise.all(
-        images.map(image => new Promise<string>((resolve) => {
-          const reader = new FileReader();
-          reader.onloadend = () => resolve(reader.result as string);
-          reader.readAsDataURL(image);
-        }))
-      );
-
-      const now = new Date().toISOString();
-      const newProperty: Property = {
-        ...propertyData,
-        id: crypto.randomUUID(),
-        images: imageUrls,
-        ownerId: user.id,
-        createdAt: now,
-        updatedAt: now,
-      };
-
-      const updatedProperties = [...properties, newProperty];
-      setProperties(updatedProperties);
-      localStorage.setItem('properties', JSON.stringify(updatedProperties));
-
-      return newProperty.id;
+      if (snapshot.exists()) {
+        setFavorites(snapshot.val());
+      } else {
+        setFavorites([]);
+      }
     } catch (err) {
-      setError('Error al agregar la propiedad');
-      throw err;
-    } finally {
-      setLoading(false);
+      console.error('Error al cargar favoritos:', err);
+      setFavorites([]);
     }
   };
+
+  fetchFavorites();
+}, [user]);
+
+const addProperty = async (
+  propertyData: Omit<Property, 'id' | 'images' | 'createdAt' | 'updatedAt' | 'ownerId'>,
+  images: File[]
+): Promise<string> => {
+  try {
+    if (!user) throw new Error('Debes iniciar sesión para publicar una propiedad');
+    if (!user.id) throw new Error('El usuario no tiene un ID válido');
+
+    console.log('Usuario actual:', user); // 👈 Para depuración
+
+    setLoading(true);
+
+    const imageUrls = await Promise.all(
+      images.map(image => new Promise<string>((resolve) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.readAsDataURL(image);
+      }))
+    );
+
+    const now = new Date().toISOString();
+    const newProperty: Property = {
+      ...propertyData,
+      id: crypto.randomUUID(),
+      images: imageUrls,
+      ownerId: user.id,           // ✅ Ya no será undefined
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    // Guardar localmente
+    const updatedProperties = [...properties, newProperty];
+    setProperties(updatedProperties);
+    localStorage.setItem('properties', JSON.stringify(updatedProperties));
+
+    // Subir a Firestore
+    await uploadPropertyToFirebase(newProperty);
+
+    return newProperty.id;
+  } catch (err) {
+    console.error('Error al agregar la propiedad:', err);
+    setError('Error al agregar la propiedad');
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   const updateProperty = async (id: string, propertyUpdates: Partial<Property>): Promise<void> => {
     try {
@@ -176,41 +218,50 @@ export const PropertyProvider = ({ children }: PropertyProviderProps) => {
       setLoading(false);
     }
   };
+const toggleFavorite = async (propertyId: string): Promise<void> => {
+  try {
+    if (!user) throw new Error('Debes iniciar sesión para guardar favoritos');
 
-  const toggleFavorite = async (propertyId: string): Promise<void> => {
-    try {
-      if (!user) throw new Error('Debes iniciar sesión para guardar favoritos');
+    setLoading(true);
 
-      setLoading(true);
+    const db = getDatabase(app);
+    const userFavoritesRef = ref(db, `users/${user.id}/favorites`);
 
-      const users = JSON.parse(localStorage.getItem('users') || '[]');
-      const userIndex = users.findIndex((u: any) => u.id === user.id);
+    // Obtener favoritos actuales del usuario
+    const snapshot = await get(userFavoritesRef);
+    let currentFavorites: string[] = [];
 
-      if (userIndex === -1) throw new Error('Usuario no encontrado');
-
-      let updatedFavorites: string[];
-      if (users[userIndex].favorites?.includes(propertyId)) {
-        updatedFavorites = users[userIndex].favorites.filter((id: string) => id !== propertyId);
-      } else {
-        updatedFavorites = [...(users[userIndex].favorites || []), propertyId];
-      }
-
-      users[userIndex].favorites = updatedFavorites;
-      localStorage.setItem('users', JSON.stringify(users));
-
-      const updatedUser = { ...user, favorites: updatedFavorites };
-      localStorage.setItem('user', JSON.stringify(updatedUser));
-    } catch (err) {
-      setError('Error al actualizar favoritos');
-      throw err;
-    } finally {
-      setLoading(false);
+    if (snapshot.exists()) {
+      currentFavorites = snapshot.val();
     }
-  };
 
-  const isFavorite = (propertyId: string): boolean => {
-    return user?.favorites?.includes(propertyId) || false;
-  };
+    let updatedFavorites: string[];
+
+    if (currentFavorites.includes(propertyId)) {
+      // Quitar de favoritos
+      updatedFavorites = currentFavorites.filter(id => id !== propertyId);
+    } else {
+      // Agregar a favoritos
+      updatedFavorites = [...currentFavorites, propertyId];
+    }
+
+    // Guardar favoritos actualizados en Firebase
+    await set(userFavoritesRef, updatedFavorites);
+  } catch (err) {
+    console.error(err);
+    setError('Error al actualizar favoritos');
+    throw err;
+  } finally {
+    setLoading(false);
+  }
+};
+
+const isFavorite = (propertyId: string): boolean => {
+  return favorites.includes(propertyId);
+};
+
+// Propiedades favoritas del usuario (objetos completos)
+const favoritedProperties = properties.filter(p => favorites.includes(p.id));
 
   const value = {
     properties,
@@ -218,7 +269,8 @@ export const PropertyProvider = ({ children }: PropertyProviderProps) => {
     error,
     filters,
     selectedProperty,
-    favoritedProperties,
+    favorites,
+    favoritedProperties, // <-- Agregado aquí
     addProperty,
     updateProperty,
     deleteProperty,

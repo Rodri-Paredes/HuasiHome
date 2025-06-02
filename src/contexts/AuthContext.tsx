@@ -1,32 +1,45 @@
-import React, { createContext, useState, useEffect } from 'react';
+import { createContext, useEffect, useState, ReactNode } from 'react';
 import {
+  getAuth,
+  onAuthStateChanged,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-  updateProfile,
-  onAuthStateChanged,
   signOut,
-  User,
+  User as FirebaseUser,
 } from 'firebase/auth';
-import { auth } from '../firebase/config';
+import app from '../firebase/config';
+
+interface AuthUser {
+  id: string;
+  email: string | null;
+}
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, displayName: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   error: string | null;
   clearError: () => void;
 }
 
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | null>(null);
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const auth = getAuth(app);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser: FirebaseUser | null) => {
+      if (firebaseUser) {
+        setUser({
+          id: firebaseUser.uid,
+          email: firebaseUser.email,
+        });
+      } else {
+        setUser(null);
+      }
     });
 
     return () => unsubscribe();
@@ -37,38 +50,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setError(null);
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
-      setError(parseAuthError(err));
+      console.log(err);
+      setError("Credianciales Invalidas");
     }
   };
 
-  const register = async (email: string, password: string, displayName: string) => {
+  const register = async (email: string, password: string) => {
     try {
       setError(null);
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      await updateProfile(userCredential.user, { displayName });
+      await createUserWithEmailAndPassword(auth, email, password);
     } catch (err: any) {
-      setError(parseAuthError(err));
+      setError(err.message);
     }
   };
 
   const logout = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+    } catch (err: any) {
+      setError(err.message);
+    }
   };
 
   const clearError = () => setError(null);
-
-  const parseAuthError = (err: any) => {
-    switch (err.code) {
-      case 'auth/email-already-in-use':
-        return 'Este correo ya está registrado.';
-      case 'auth/invalid-email':
-        return 'Correo electrónico inválido.';
-      case 'auth/weak-password':
-        return 'La contraseña es muy débil.';
-      default:
-        return 'Error de autenticación.';
-    }
-  };
 
   return (
     <AuthContext.Provider value={{ user, login, register, logout, error, clearError }}>

@@ -9,7 +9,7 @@ const MapPage = () => {
   const { properties, loading, selectedProperty, setSelectedProperty } = useProperties();
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   
-  // Reset selected property when navigating away
+
   useEffect(() => {
     return () => {
       setSelectedProperty(null);
@@ -18,10 +18,8 @@ const MapPage = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
-      {/* Filter bar */}
+
       <FilterBar />
-      
-      {/* View toggle buttons (mobile only) */}
       <div className="md:hidden bg-white border-t border-secondary-200 p-2 flex">
         <button 
           className={`flex-1 flex justify-center items-center space-x-1 py-2 rounded-l-lg transition-colors ${
@@ -48,7 +46,7 @@ const MapPage = () => {
       </div>
       
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-        {/* Map view */}
+
         <div 
           className={`${
             viewMode === 'map' ? 'flex' : 'hidden'
@@ -62,8 +60,7 @@ const MapPage = () => {
             <MapComponent properties={properties} />
           )}
         </div>
-        
-        {/* Property list view (mobile only) */}
+
         {viewMode === 'list' && (
           <div className="flex-1 md:hidden bg-secondary-50 overflow-y-auto">
             <div className="container mx-auto p-4">
@@ -92,7 +89,7 @@ const MapPage = () => {
           </div>
         )}
         
-        {/* Selected property details */}
+
         {selectedProperty && (
           <div className="bg-white md:w-1/3 flex flex-col max-h-[60vh] md:max-h-full md:h-auto overflow-hidden transition-all duration-300 shadow-lg md:shadow-none z-10">
             <div className="p-4 border-b border-secondary-200 flex justify-between items-center">

@@ -28,37 +28,23 @@ const PropertyDetailsPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  
-  const favorite = property ? isFavorite(property.id) : false;
-
+  const [favorite, setFavorite] = useState<Boolean>(false);
+ 
   useEffect(() => {
     const fetchProperty = async () => {
       if (!id) return;
-      
-      // First check if the property is already in the context
       const contextProperty = properties.find(p => p.id === id);
-      
       if (contextProperty) {
         setProperty(contextProperty);
+        if (isFavorite(contextProperty.id)) {
+          setFavorite(true);
+        } else {
+          setFavorite(false);
+        }
         setLoading(false);
         return;
-      }
-      
-      // If not, fetch it from Firestore
-      try {
-        const docRef = doc(db, 'properties', id);
-        const docSnap = await getDoc(docRef);
-        
-        if (docSnap.exists()) {
-          const data = docSnap.data() as Omit<Property, 'id'>;
-          setProperty({ ...data, id: docSnap.id });
-        } else {
-          setError('Propiedad no encontrada');
-        }
-      } catch (err) {
-        setError('Error al cargar los detalles de la propiedad');
-        console.error(err);
-      } finally {
+      } else {
+        console.log("property not found");
         setLoading(false);
       }
     };
@@ -69,6 +55,7 @@ const PropertyDetailsPage = () => {
   const handleToggleFavorite = async () => {
     if (!property) return;
     await toggleFavorite(property.id);
+    setFavorite((prev) => !prev);
   };
 
   const nextImage = () => {
