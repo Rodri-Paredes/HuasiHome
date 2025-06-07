@@ -315,7 +315,8 @@ const PropertyDetailsPage = () => {
                   style={{ border: 0 }}
                   loading="lazy"
                   allowFullScreen
-                  src={`https://www.google.com/maps/embed/v1/place?key=AIzaSyDZK9gxG0HbGdkuDCkPL0VQdj1QAeAvbO0&q=${property.location.lat},${property.location.lng}`}
+                  referrerPolicy="no-referrer-when-downgrade"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${property.location.lng-0.01}%2C${property.location.lat-0.01}%2C${property.location.lng+0.01}%2C${property.location.lat+0.01}&layer=mapnik&marker=${property.location.lat}%2C${property.location.lng}`}
                 ></iframe>
               </div>
             </div>

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Search, Sliders, MapPin, Home, Building, Map as MapIcon } from 'lucide-react';
 import { useProperties } from '../hooks/useProperties';
 import { TransactionType } from '../contexts/PropertyContext';
+import { cityCenters } from '../utils/cityCenters';
 
 interface FilterBarProps {
   selectedCity: string;
@@ -184,11 +185,9 @@ const FilterBar = ({ selectedCity, setSelectedCity }: FilterBarProps) => {
                     onChange={(e) => handleCityChange(e.target.value)}
                   >
                     <option value="">Todas las ciudades</option>
-                    <option value="La Paz">La Paz</option>
-                    <option value="Cochabamba">Cochabamba</option>
-                    <option value="Santa Cruz">Santa Cruz</option>
-                    <option value="Sucre">Sucre</option>
-                    <option value="Tarija">Tarija</option>
+                    {Object.keys(cityCenters).map(city => (
+                      <option key={city} value={city}>{city}</option>
+                    ))}
                   </select>
                 </div>
               </div>

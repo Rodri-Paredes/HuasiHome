@@ -1,11 +1,12 @@
-import { useState, useRef, ChangeEvent } from 'react';
+import { useState, useRef, ChangeEvent, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Plus, X, Upload, MapPinned } from 'lucide-react';
 import { useProperties } from '../hooks/useProperties';
 import { TransactionType } from '../contexts/PropertyContext';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
+import { cityCenters } from '../utils/cityCenters';
 
 // Configuración del ícono del marcador (necesario para Leaflet)
 const icon = L.icon({ 
@@ -37,6 +38,17 @@ function MapEvents({ setMarkerPosition }: { setMarkerPosition: (pos: { lat: numb
   return null;
 }
 
+// Componente auxiliar para recentrar el mapa cuando cambia el centro
+function MapAutoCenter({ center }: { center: { lat: number; lng: number } }) {
+  const map = useMap();
+  useEffect(() => {
+    if (center) {
+      map.setView([center.lat, center.lng], 13);
+    }
+  }, [center, map]);
+  return null;
+}
+
 const ListPropertyPage = () => {
   const navigate = useNavigate();
   const { addProperty, loading } = useProperties();
@@ -46,6 +58,7 @@ const ListPropertyPage = () => {
   const [markerPosition, setMarkerPosition] = useState<{ lat: number; lng: number } | null>(null);
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>(defaultCenter);
   
   // Property form state
   const [property, setProperty] = useState({
@@ -95,7 +108,6 @@ const ListPropertyPage = () => {
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target;
     
-    // Parse numeric values
     if (
       type === 'number' && 
       ['price', 'landSize', 'constructionSize', 'bedrooms', 'bathrooms', 'parkingSpots'].includes(name)
@@ -108,6 +120,20 @@ const ListPropertyPage = () => {
     // Clear validation error when field is updated
     if (formErrors[name]) {
       setFormErrors({ ...formErrors, [name]: '' });
+    }
+    
+    if (name === 'city') {
+      setProperty({ ...property, [name]: value });
+      if (value && cityCenters[value]) {
+        setMapCenter(cityCenters[value]);
+        // Opcional: también puedes mover el marcador automáticamente al centro de la ciudad si quieres
+        // setMarkerPosition(cityCenters[value]);
+      }
+      // Clear validation error when field is updated
+      if (formErrors[name]) {
+        setFormErrors({ ...formErrors, [name]: '' });
+      }
+      return;
     }
   };
 
@@ -401,16 +427,9 @@ const ListPropertyPage = () => {
                 className={`input ${formErrors.city ? 'border-error-500 focus:ring-error-500' : ''}`}
               >
                 <option value="">Selecciona una ciudad</option>
-                <option value="La Paz">La Paz</option>
-                <option value="El Alto">El Alto</option>
-                <option value="Cochabamba">Cochabamba</option>
-                <option value="Santa Cruz">Santa Cruz</option>
-                <option value="Sucre">Sucre</option>
-                <option value="Oruro">Oruro</option>
-                <option value="Potosí">Potosí</option>
-                <option value="Tarija">Tarija</option>
-                <option value="Trinidad">Trinidad</option>
-                <option value="Cobija">Cobija</option>
+                {Object.keys(cityCenters).map(city => (
+                  <option key={city} value={city}>{city}</option>
+                ))}
               </select>
               {formErrors.city && (
                 <p className="mt-1 text-sm text-error-500">{formErrors.city}</p>
@@ -425,16 +444,25 @@ const ListPropertyPage = () => {
               
               <div className="h-[400px] rounded-lg overflow-hidden border border-secondary-200">
                 <MapContainer
-                  center={markerPosition || defaultCenter}
+                  center={markerPosition || mapCenter}
                   zoom={13}
                   style={{ height: '100%', width: '100%' }}
+                  key={mapCenter.lat + '-' + mapCenter.lng} // fuerza recenter visual
                 >
                   <TileLayer
                     url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                   />
                   {markerPosition && (
-                    <Marker position={[markerPosition.lat, markerPosition.lng]} icon={icon} />
+                    <Marker position={[markerPosition.lat, markerPosition.lng]} icon={icon} draggable={true}
+                      eventHandlers={{
+                        dragend: (e) => {
+                          const marker = e.target;
+                          const position = marker.getLatLng();
+                          setMarkerPosition({ lat: position.lat, lng: position.lng });
+                        },
+                      }}
+                    />
                   )}
                   <MapEvents setMarkerPosition={setMarkerPosition} />
                 </MapContainer>
