@@ -10,6 +10,7 @@ const RegisterPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -45,6 +46,7 @@ const RegisterPage = () => {
       await set(ref(db, `users/${userId}`), {
         displayName,
         email: userEmail,
+        phoneNumber,
         favorites: [],
       });
       // No llamar a register aquí para evitar EMAIL_EXISTS
@@ -116,6 +118,30 @@ const RegisterPage = () => {
                       setEmail(e.target.value);
                       clearError();
                     }}
+                  />
+                </div>
+              </div>
+
+              {/* Phone Number */}
+              <div>
+                <label htmlFor="phoneNumber" className="block text-sm font-medium text-secondary-700">
+                  Número de celular
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="phoneNumber"
+                    name="phoneNumber"
+                    type="tel"
+                    required
+                    className="input"
+                    placeholder="Ej: 71234567"
+                    value={phoneNumber}
+                    onChange={(e) => {
+                      setPhoneNumber(e.target.value);
+                      clearError();
+                    }}
+                    pattern="[0-9]{7,15}"
+                    maxLength={15}
                   />
                 </div>
               </div>

@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { doc, getDoc } from 'firebase/firestore';
-import { db } from '../firebase/config';
 import { Property } from '../contexts/PropertyContext';
 import { useProperties } from '../hooks/useProperties';
 import { 
@@ -19,6 +17,8 @@ import {
   Car
 } from 'lucide-react';
 import { formatCurrency } from '../utils/formatters';
+import { getDatabase, ref, get } from 'firebase/database';
+
 
 const PropertyDetailsPage = () => {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +29,9 @@ const PropertyDetailsPage = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [favorite, setFavorite] = useState<Boolean>(false);
+  const [ownerDisplayName, setOwnerDisplayName] = useState<string>('');
+  const [ownerPhoneNumber, setOwnerPhoneNumber] = useState<string>('');
+  const [showContactModal, setShowContactModal] = useState(false);
  
   useEffect(() => {
     const fetchProperty = async () => {
@@ -51,6 +54,29 @@ const PropertyDetailsPage = () => {
 
     fetchProperty();
   }, [id, properties]);
+
+  useEffect(() => {
+    const fetchOwnerDisplayName = async () => {
+      if (!property?.ownerId) return;
+      try {
+        const db = getDatabase();
+        const userRef = ref(db, `users/${property.ownerId}`);
+        const snapshot = await get(userRef);
+        if (snapshot.exists()) {
+          const data = snapshot.val();
+          setOwnerDisplayName(data.displayName || '');
+          setOwnerPhoneNumber(data.phoneNumber || '');
+        } else {
+          setOwnerDisplayName('');
+          setOwnerPhoneNumber('');
+        }
+      } catch (err) {
+        setOwnerDisplayName('');
+        setOwnerPhoneNumber('');
+      }
+    };
+    fetchOwnerDisplayName();
+  }, [property?.ownerId]);
 
   const handleToggleFavorite = async () => {
     if (!property) return;
@@ -114,6 +140,19 @@ const PropertyDetailsPage = () => {
       </div>
     );
   }
+
+  const handleContactClick = () => {
+    setShowContactModal(true);
+  };
+  const handleCloseModal = () => {
+    setShowContactModal(false);
+  };
+  const handleWhatsApp = () => {
+    if (!property) return;
+    const message = `Hola, estoy interesado en la propiedad "${property.title}" publicada en HuasiHome. ¿Podrías darme más información?`;
+    const phoneUrl = `https://wa.me/${ownerPhoneNumber}?text=${encodeURIComponent(message)}`;
+    window.open(phoneUrl, '_blank');
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -295,8 +334,10 @@ const PropertyDetailsPage = () => {
                     </div>
                     <div>
                       <div className="font-medium">Propietario</div>
-                      <div className="text-sm text-secondary-500">ID: {property.ownerId.substring(0, 8)}...</div>
-                      <button className="mt-2 btn-primary text-sm py-1.5">
+                      <div className="text-sm text-secondary-500">
+                        {ownerDisplayName ? `${ownerDisplayName} ${ownerPhoneNumber}` : 'Propietario'}
+                      </div>
+                      <button onClick={handleContactClick} className="mt-2 btn-primary text-sm py-1.5">
                         Contactar
                       </button>
                     </div>
@@ -323,6 +364,30 @@ const PropertyDetailsPage = () => {
           </div>
         </div>
       </div>
+
+      {showContactModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs relative">
+            <button onClick={handleCloseModal} className="absolute top-2 right-2 text-secondary-400 hover:text-secondary-700 text-xl">&times;</button>
+            <h3 className="text-lg font-semibold mb-4 text-center">Contactar al propietario</h3>
+            <div className="flex flex-col gap-4">
+              <a
+                href={`tel:${ownerPhoneNumber}`}
+                className="btn-primary text-center py-2 rounded"
+                style={{ textDecoration: 'none' }}
+              >
+                Llamar GSM
+              </a>
+              <button
+                onClick={handleWhatsApp}
+                className="btn-success text-center py-2 rounded"
+              >
+                WhatsApp
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
