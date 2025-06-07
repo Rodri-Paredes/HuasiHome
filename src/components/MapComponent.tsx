@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L, { LatLngExpression } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -6,6 +6,7 @@ import { Property } from '../contexts/PropertyContext';
 import { useProperties } from '../hooks/useProperties';
 import PropertyCardMini from './PropertyCardMini';
 import { useNavigate } from 'react-router-dom';
+import { Marker as LeafletMarker } from 'leaflet';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
@@ -19,6 +20,7 @@ const defaultCenter: LatLngExpression = [-17.3935, -66.1570];
 
 interface MapComponentProps {
   properties: Property[];
+  city: string;
 }
 
 const FitBounds = ({ properties }: { properties: Property[] }) => {
@@ -33,6 +35,18 @@ const FitBounds = ({ properties }: { properties: Property[] }) => {
 
   return null;
 };
+const cityCenters: Record<string, { lat: number; lng: number }> = {
+  'La Paz': { lat: -16.5000, lng: -68.1500 },
+  'El Alto': { lat: -16.5000, lng: -68.2000 },
+  'Cochabamba': { lat: -17.3895, lng: -66.1568 },
+  'Santa Cruz': { lat: -17.7833, lng: -63.1821 },
+  'Sucre': { lat: -19.0333, lng: -65.2627 },
+  'Oruro': { lat: -17.9833, lng: -67.1500 },
+  'Potosí': { lat: -19.5836, lng: -65.7531 },
+  'Tarija': { lat: -21.5355, lng: -64.7296 },
+  'Trinidad': { lat: -14.8333, lng: -64.9000 },
+  'Cobija': { lat: -11.0333, lng: -68.7667 },
+};
 
 const getMarkerIcon = (color: string) =>
   new L.DivIcon({
@@ -43,9 +57,50 @@ const getMarkerIcon = (color: string) =>
     popupAnchor: [0, -10],
   });
 
-const MapComponent = ({ properties }: MapComponentProps) => {
+const CenterLaPaz = () => {
+  const map = useMap();
+  useEffect(() => {
+    map.setView([cityCenters['La Paz'].lat, cityCenters['La Paz'].lng], 13);
+  }, [map]);
+  return null;
+};
+
+const CustomMarker = ({ position, icon, children }: { position: LatLngExpression, icon: L.DivIcon, children: React.ReactNode }) => {
+  const markerRef = useRef<any>(null);
+  useEffect(() => {
+    if (markerRef.current) {
+      (markerRef.current as any).setIcon(icon);
+    }
+  }, [icon]);
+  return (
+    <Marker position={position} ref={markerRef}>
+      {children}
+    </Marker>
+  );
+};
+
+const MapAutoCenter = ({ city }: { city: string }) => {
+  const map = useMap();
+  useEffect(() => {
+    if (city && cityCenters[city]) {
+      map.setView([cityCenters[city].lat, cityCenters[city].lng], 13);
+    }
+  }, [city, map]);
+  return null;
+};
+
+const MapComponent = ({ properties, city }: MapComponentProps) => {
   const { setSelectedProperty } = useProperties();
   const navigate = useNavigate();
+  const mapRef = useRef<any>(null);
+
+  // Centrar el mapa en la ciudad seleccionada al montar y cuando cambie city
+  useEffect(() => {
+    if (city && cityCenters[city] && mapRef.current) {
+      // Usar flyTo para asegurar el centrado incluso en el primer render
+      mapRef.current.flyTo([cityCenters[city].lat, cityCenters[city].lng], 13);
+    }
+  }, [city]);
 
   const getColor = (property: Property) => {
     return property.transactionType === 'venta'
@@ -58,22 +113,17 @@ const MapComponent = ({ properties }: MapComponentProps) => {
   return (
     <div className="h-[600px] w-full">
       <MapContainer
-        center={defaultCenter}
-        zoom={13}
-        scrollWheelZoom
         className="h-full w-full rounded-lg z-0"
+        style={{ height: '100%', width: '100%' }}
       >
+        <MapAutoCenter city={city} />
         <TileLayer
-          attribution='© <a href="https://www.openstreetmap.org/">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-
-        <FitBounds properties={properties} />
-
         {properties.map(property => (
-          <Marker
+          <CustomMarker
             key={property.id + '-' + property.location.lat + '-' + property.location.lng}
-            position={property.location as LatLngExpression}
+            position={[property.location.lat, property.location.lng] as LatLngExpression}
             icon={getMarkerIcon(getColor(property))}
           >
             <Popup>
@@ -87,7 +137,7 @@ const MapComponent = ({ properties }: MapComponentProps) => {
                 <PropertyCardMini property={property} />
               </div>
             </Popup>
-          </Marker>
+          </CustomMarker>
         ))}
       </MapContainer>
     </div>

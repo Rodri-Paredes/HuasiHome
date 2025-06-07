@@ -8,7 +8,7 @@ import { X, MapPin, List } from 'lucide-react';
 const MapPage = () => {
   const { filteredProperties, loading, selectedProperty, setSelectedProperty } = useProperties();
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
-  
+  const [selectedCity, setSelectedCity] = useState<string>('Cochabamba');
 
   useEffect(() => {
     return () => {
@@ -18,8 +18,7 @@ const MapPage = () => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-4rem)]">
-
-      <FilterBar />
+      <FilterBar selectedCity={selectedCity} setSelectedCity={setSelectedCity} />
       <div className="md:hidden bg-white border-t border-secondary-200 p-2 flex">
         <button 
           className={`flex-1 flex justify-center items-center space-x-1 py-2 rounded-l-lg transition-colors ${
@@ -57,7 +56,7 @@ const MapPage = () => {
               <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
             </div>
           ) : (
-            <MapComponent properties={filteredProperties} />
+            <MapComponent properties={filteredProperties} city={selectedCity} />
           )}
         </div>
 

@@ -3,7 +3,12 @@ import { Search, Sliders, MapPin, Home, Building, Map as MapIcon } from 'lucide-
 import { useProperties } from '../hooks/useProperties';
 import { TransactionType } from '../contexts/PropertyContext';
 
-const FilterBar = () => {
+interface FilterBarProps {
+  selectedCity: string;
+  setSelectedCity: (city: string) => void;
+}
+
+const FilterBar = ({ selectedCity, setSelectedCity }: FilterBarProps) => {
   const { filters, setFilters } = useProperties();
   const [showFilters, setShowFilters] = useState(false);
   
@@ -52,8 +57,11 @@ const FilterBar = () => {
   };
 
   const handleCityChange = (city: string) => {
+    console.log('City changed:', city);
+
     setLocalFilters({ ...localFilters, city });
     setFilters({ ...filters, city: city || undefined });
+    setSelectedCity(city);
   };
 
   const clearFilters = () => {
@@ -172,7 +180,7 @@ const FilterBar = () => {
                   </span>
                   <select
                     className="input pl-10"
-                    value={localFilters.city}
+                    value={selectedCity}
                     onChange={(e) => handleCityChange(e.target.value)}
                   >
                     <option value="">Todas las ciudades</option>
