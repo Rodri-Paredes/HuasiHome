@@ -3,6 +3,7 @@ import { Search, Sliders, MapPin, Home, Building, Map as MapIcon } from 'lucide-
 import { useProperties } from '../hooks/useProperties';
 import { TransactionType } from '../contexts/PropertyContext';
 import { cityCenters } from '../utils/cityCenters';
+import { transactionTypeColors } from '../utils/transactionTypeColors';
 
 interface FilterBarProps {
   selectedCity: string;
@@ -115,36 +116,26 @@ const FilterBar = ({ selectedCity, setSelectedCity }: FilterBarProps) => {
             >
               Todos
             </button>
-            <button
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                isActiveTransactionType('venta')
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-secondary-100 text-secondary-700 hover:bg-secondary-200'
-              }`}
-              onClick={() => handleTransactionTypeChange('venta')}
-            >
-              Venta
-            </button>
-            <button
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                isActiveTransactionType('anticrético')
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-secondary-100 text-secondary-700 hover:bg-secondary-200'
-              }`}
-              onClick={() => handleTransactionTypeChange('anticrético')}
-            >
-              Anticrético
-            </button>
-            <button
-              className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
-                isActiveTransactionType('alquiler')
-                  ? 'bg-primary-500 text-white'
-                  : 'bg-secondary-100 text-secondary-700 hover:bg-secondary-200'
-              }`}
-              onClick={() => handleTransactionTypeChange('alquiler')}
-            >
-              Alquiler
-            </button>
+            {(['venta', 'anticrético', 'alquiler'] as const).map(type => (
+              <button
+                key={type}
+                className={`px-3 py-1.5 rounded-full text-sm font-medium transition-colors ${
+                  isActiveTransactionType(type)
+                    ? ''
+                    : 'text-secondary-700'
+                }`}
+                style={{
+                  backgroundColor: isActiveTransactionType(type)
+                    ? transactionTypeColors[type]
+                    : transactionTypeColors[type] + '33', // 20% transparencia
+                  color: isActiveTransactionType(type) ? '#fff' : undefined,
+                  border: isActiveTransactionType(type) ? `1.5px solid ${transactionTypeColors[type]}` : undefined,
+                }}
+                onClick={() => handleTransactionTypeChange(type)}
+              >
+                {type.charAt(0).toUpperCase() + type.slice(1)}
+              </button>
+            ))}
           </div>
 
           {/* Spacer */}

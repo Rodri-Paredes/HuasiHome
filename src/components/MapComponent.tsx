@@ -8,6 +8,7 @@ import PropertyCardMini from './PropertyCardMini';
 import { useNavigate } from 'react-router-dom';
 import { Marker as LeafletMarker } from 'leaflet';
 import { cityCenters } from '../utils/cityCenters';
+import { transactionTypeColors } from '../utils/transactionTypeColors';
 
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
@@ -37,21 +38,19 @@ const FitBounds = ({ properties }: { properties: Property[] }) => {
   return null;
 };
 
-const getMarkerIcon = (color: string) =>
-  new L.DivIcon({
+// SVG base para el pin, con marcador de color dinámico
+const getMarkerIcon = (color: string) => {
+  const svg = `<?xml version="1.0" encoding="utf-8"?>
+  <svg fill="${color}" width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
+    <path d="M4 12q0-3.264 1.6-6.016t4.384-4.352 6.016-1.632 6.016 1.632 4.384 4.352 1.6 6.016q0 1.376-0.672 3.2t-1.696 3.68-2.336 3.776-2.56 3.584-2.336 2.944-1.728 2.080l-0.672 0.736q-0.256-0.256-0.672-0.768t-1.696-2.016-2.368-3.008-2.528-3.52-2.368-3.84-1.696-3.616-0.672-3.232zM8 12q0 3.328 2.336 5.664t5.664 2.336 5.664-2.336 2.336-5.664-2.336-5.632-5.664-2.368-5.664 2.368-2.336 5.632z"></path>
+  </svg>`;
+  return new L.DivIcon({
     className: 'custom-pin',
-    html: `<div style="background-color: ${color}; width: 20px; height: 20px; border-radius: 50%; border: 2px solid white;"></div>`,
-    iconSize: [20, 20],
-    iconAnchor: [10, 10],
-    popupAnchor: [0, -10],
+    html: svg,
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32],
   });
-
-const CenterLaPaz = () => {
-  const map = useMap();
-  useEffect(() => {
-    map.setView([cityCenters['La Paz'].lat, cityCenters['La Paz'].lng], 13);
-  }, [map]);
-  return null;
 };
 
 const CustomMarker = ({ position, icon, children }: { position: LatLngExpression, icon: L.DivIcon, children: React.ReactNode }) => {
@@ -92,11 +91,7 @@ const MapComponent = ({ properties, city }: MapComponentProps) => {
   }, [city]);
 
   const getColor = (property: Property) => {
-    return property.transactionType === 'venta'
-      ? '#E84118'
-      : property.transactionType === 'anticrético'
-      ? '#F59E0B'
-      : '#22C55E'; // alquiler
+    return transactionTypeColors[property.transactionType] || '#22C55E';
   };
 
   return (
