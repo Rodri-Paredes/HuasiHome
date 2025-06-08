@@ -45,26 +45,21 @@ const MapPage = () => {
       </div>
       
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
-
-        <div 
-          className={`$${
-            viewMode === 'map' ? 'flex' : 'hidden'
-          } md:flex flex-1 relative ${selectedProperty ? 'md:w-2/3' : 'md:w-full'} transition-all duration-300`}
-        >
-          {loading ? (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
-            </div>
-          ) : (
-            <MapComponent properties={filteredProperties} city={selectedCity} />
-          )}
-        </div>
-
+        {viewMode === 'map' && (
+          <div className={`flex flex-1 relative w-full transition-all duration-300`}>
+            {loading ? (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+              </div>
+            ) : (
+              <MapComponent properties={filteredProperties} city={selectedCity} />
+            )}
+          </div>
+        )}
         {viewMode === 'list' && (
-          <div className="flex-1 md:hidden bg-secondary-50 overflow-y-auto">
+          <div className="flex-1 bg-secondary-50 overflow-y-auto">
             <div className="container mx-auto p-4">
               <h2 className="text-xl font-bold mb-4">Propiedades ({filteredProperties.length})</h2>
-              
               {loading ? (
                 <div className="flex justify-center py-8">
                   <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
@@ -87,8 +82,6 @@ const MapPage = () => {
             </div>
           </div>
         )}
-        
-
         {selectedProperty && (
           <div className="bg-white md:w-1/3 flex flex-col max-h-[60vh] md:max-h-full md:h-auto overflow-hidden transition-all duration-300 shadow-lg md:shadow-none z-10">
             <div className="p-4 border-b border-secondary-200 flex justify-between items-center">

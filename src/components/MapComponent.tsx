@@ -100,10 +100,11 @@ const MapComponent = ({ properties, city }: MapComponentProps) => {
   };
 
   return (
-    <div className="h-[600px] w-full">
+    <div className="h-full w-full">
       <MapContainer
         className="h-full w-full rounded-lg z-0"
         style={{ height: '100%', width: '100%' }}
+        minZoom={6}
       >
         <MapAutoCenter city={city} />
         <TileLayer
