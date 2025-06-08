@@ -129,11 +129,11 @@ const PropertyDetailsPage = () => {
             <h2 className="text-2xl font-bold text-secondary-800 mb-2">Error</h2>
             <p className="text-secondary-600">{error || 'Propiedad no encontrada'}</p>
             <button 
-              onClick={() => navigate(-1)}
+              onClick={() => navigate("/")}
               className="mt-4 btn-primary"
             >
               <ArrowLeft className="mr-2 h-5 w-5" />
-              Volver
+              Ver Mapa
             </button>
           </div>
         </div>
@@ -160,11 +160,11 @@ const PropertyDetailsPage = () => {
         {/* Navigation */}
         <div className="mb-6 flex items-center">
           <button 
-            onClick={() => navigate(-1)}
+            onClick={() => navigate("/")}
             className="flex items-center text-secondary-700 hover:text-primary-500 transition-colors"
           >
             <ArrowLeft className="mr-2 h-5 w-5" />
-            <span>Volver</span>
+            <span>Ver Mapa</span>
           </button>
         </div>
 

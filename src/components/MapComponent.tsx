@@ -10,6 +10,9 @@ import { Marker as LeafletMarker } from 'leaflet';
 import { cityCenters } from '../utils/cityCenters';
 import { transactionTypeColors } from '../utils/transactionTypeColors';
 
+// @ts-ignore
+import pinSvgRaw from '../../public/pin.svg?raw';
+
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 
 L.Icon.Default.mergeOptions({
@@ -40,10 +43,11 @@ const FitBounds = ({ properties }: { properties: Property[] }) => {
 
 // SVG base para el pin, con marcador de color dinámico
 const getMarkerIcon = (color: string) => {
-  const svg = `<?xml version="1.0" encoding="utf-8"?>
-  <svg fill="${color}" width="32" height="32" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg">
-    <path d="M4 12q0-3.264 1.6-6.016t4.384-4.352 6.016-1.632 6.016 1.632 4.384 4.352 1.6 6.016q0 1.376-0.672 3.2t-1.696 3.68-2.336 3.776-2.56 3.584-2.336 2.944-1.728 2.080l-0.672 0.736q-0.256-0.256-0.672-0.768t-1.696-2.016-2.368-3.008-2.528-3.52-2.368-3.84-1.696-3.616-0.672-3.232zM8 12q0 3.328 2.336 5.664t5.664 2.336 5.664-2.336 2.336-5.664-2.336-5.632-5.664-2.368-5.664 2.368-2.336 5.632z"></path>
-  </svg>`;
+  // Reemplaza el fill y fuerza el tamaño a 32x32px
+  let svg = pinSvgRaw
+    .replace(/fill="#([0-9A-Fa-f]{6})"/, `fill="${color}"`)
+    .replace(/width="[0-9]+px"/, 'width="32px"')
+    .replace(/height="[0-9]+px"/, 'height="32px"');
   return new L.DivIcon({
     className: 'custom-pin',
     html: svg,

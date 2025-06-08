@@ -59,6 +59,8 @@ const ListPropertyPage = () => {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>(defaultCenter);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [lastPropertyId, setLastPropertyId] = useState<string | null>(null);
   
   // Property form state
   const [property, setProperty] = useState({
@@ -215,14 +217,14 @@ const ListPropertyPage = () => {
         setFormErrors({ location: 'Debes seleccionar una ubicación en el mapa' });
         return;
       }
-      
       const propertyData = {
         ...property,
         location: markerPosition,
       };
-      
       const propertyId = await addProperty(propertyData, images);
-      navigate(`/property/${propertyId}`);
+      setLastPropertyId(propertyId);
+      setShowSuccessModal(true);
+      // No navegues aún, espera acción del usuario
     } catch (error) {
       console.error('Error al publicar la propiedad', error);
     }
@@ -833,6 +835,30 @@ const ListPropertyPage = () => {
           </div>
         </div>
       </div>
+      
+      {showSuccessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-xs relative">
+            <h3 className="text-lg font-semibold mb-4 text-center">¡Se registró con éxito!</h3>
+            <div className="flex flex-col gap-3">
+              <button
+                className="btn-primary w-full"
+                onClick={() => navigate('/map')}
+              >
+                Volver al mapa
+              </button>
+              <button
+                className="btn-secondary w-full"
+                onClick={() => {
+                  if (lastPropertyId) navigate(`/property/${lastPropertyId}`);
+                }}
+              >
+                Ver propiedad
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

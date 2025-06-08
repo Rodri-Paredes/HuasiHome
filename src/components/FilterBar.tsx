@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Search, Sliders, MapPin, Home, Building, Map as MapIcon } from 'lucide-react';
 import { useProperties } from '../hooks/useProperties';
 import { TransactionType } from '../contexts/PropertyContext';
@@ -33,6 +33,26 @@ const FilterBar = ({ selectedCity, setSelectedCity }: FilterBarProps) => {
     });
   }, [filters]);
 
+  useEffect(() => {
+    // Al montar, si hay ciudad en localStorage, seleccionarla
+    const storedCity = localStorage.getItem('selectedCity');
+    if (storedCity && storedCity !== selectedCity) {
+      setSelectedCity(storedCity);
+      setFilters({ ...filters, city: storedCity });
+    }
+    // Escuchar cambios en localStorage (por ejemplo, desde el modal de App)
+    const handleStorage = () => {
+      const city = localStorage.getItem('selectedCity');
+      if (city && city !== selectedCity) {
+        setSelectedCity(city);
+        setFilters({ ...filters, city });
+      }
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const handleTransactionTypeChange = (type: string) => {
     const newType = type === 'all' ? undefined : type as TransactionType;
     setLocalFilters({ ...localFilters, transactionType: type });
@@ -59,11 +79,10 @@ const FilterBar = ({ selectedCity, setSelectedCity }: FilterBarProps) => {
   };
 
   const handleCityChange = (city: string) => {
-    console.log('City changed:', city);
-
     setLocalFilters({ ...localFilters, city });
     setFilters({ ...filters, city: city || undefined });
     setSelectedCity(city);
+    localStorage.setItem('selectedCity', city);
   };
 
   const clearFilters = () => {
