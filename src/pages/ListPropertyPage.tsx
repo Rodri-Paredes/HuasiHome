@@ -307,6 +307,12 @@ const ListPropertyPage = () => {
                   <option value="terreno">Terreno</option>
                   <option value="local">Local comercial</option>
                   <option value="oficina">Oficina</option>
+                  <option value="galpon">Galpón</option>
+                  <option value="habitacion">Habitación</option>
+                  <option value="local-oficina">Local Comercial-Oficinas</option>
+                  <option value="parqueo">Parqueo</option>
+                  <option value="quinta">Quinta/Propiedad Agrícola</option>
+                  <option value="edificio">Edificio</option>
                 </select>
               </div>
             </div>

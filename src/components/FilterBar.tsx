@@ -269,7 +269,7 @@ const FilterBar = ({ selectedCity, setSelectedCity }: FilterBarProps) => {
                   <input
                     type="range"
                     min="0"
-                    max="1000000"
+                    max="3000000"
                     step="10000"
                     value={localFilters.minPrice}
                     onChange={(e) => handlePriceChange(parseInt(e.target.value), localFilters.maxPrice)}
@@ -280,7 +280,7 @@ const FilterBar = ({ selectedCity, setSelectedCity }: FilterBarProps) => {
                   <input
                     type="range"
                     min="0"
-                    max="1000000"
+                    max="3000000"
                     step="10000"
                     value={localFilters.maxPrice}
                     onChange={(e) => handlePriceChange(localFilters.minPrice, parseInt(e.target.value))}
